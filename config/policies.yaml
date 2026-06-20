@@ -1,0 +1,26 @@
+max_risk_score: 0.8
+approval_threshold: 0.6
+
+blocked_severities: 
+ - critical
+ - high
+
+sensitive_keywords:
+  - password
+  - api_key
+  - token
+  - secret
+  - .env
+
+blocked_categories: 
+ - filesystem_delete
+ - credential_access
+ - prompt_injection
+
+approval_required:
+  - github_push
+  - email_send
+
+allowed_domains:
+  - github.com
+  - openai.com
