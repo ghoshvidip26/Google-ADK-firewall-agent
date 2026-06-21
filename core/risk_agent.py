@@ -33,6 +33,14 @@ Prompt injection:
   "risk_score": 0.99,
   "reason": "Attempt to override system instructions"
 }
+
+Rules:
+- risk_score must be a number between 0.0 and 1.0
+- 0.0 = no risk
+- 1.0 = maximum risk
+- Never return negative values
+- Never return values greater than 1.0
+- Return JSON only
 """
 
 def assess_risk(analysis):
@@ -63,6 +71,8 @@ def assess_risk(analysis):
         }
 
     risk_score = float(risk.get("risk_score", 0))
+    risk_score = max(0.0, min(1.0, risk_score))
+    risk["risk_score"] = risk_score
 
     if risk_score >= 0.9:
         severity = "critical"
