@@ -4,6 +4,8 @@ from core.policy_engine import evaluatePolicy
 from core.logger import logEvent
 from core.risk_agent import assess_risk
 from tools.tools import pushCode
+from core.shell_risk import assess_shell_command
+from core.prompt_guard import detectPromptInjection
 
 def main():
 
@@ -14,9 +16,20 @@ def main():
     })
     print("ANALYSIS OBJECT:", analysis)
 
-    risk = assess_risk(
-        analysis["analysis"]
-    )
+    tool = analysis["analysis"]["tool"]
+    if tool=="shell": 
+        risk = assess_shell_command(
+            query
+        )
+    elif tool=="github":
+        risk = assess_risk(
+            analysis["analysis"]
+        )
+
+    elif tool=="prompt_guard":
+        risk = detectPromptInjection(
+            analysis["analysis"]["target"]
+        )
 
     decision = evaluatePolicy(
         risk,

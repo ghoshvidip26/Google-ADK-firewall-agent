@@ -1,6 +1,26 @@
 from helper import extract_json
 from langchain_ollama import ChatOllama
 
+SHELL_PREFIXES = [
+    "ls",
+    "pwd",
+    "echo",
+    "rm",
+    "cat",
+    "grep",
+    "find",
+    "curl",
+    "wget",
+    "ssh",
+    "scp",
+    "git",
+    "npm",
+    "pip",
+    "brew",
+    "yarn",
+    "pnpm"
+]
+
 queryAnalysisAgent = ChatOllama(
     model="gemma3:1b"
 )
@@ -8,8 +28,29 @@ queryAnalyserPrompt = """
 You are an AI security classifier.
 
 Return ONLY JSON.
+{
+    "tool": "shell|github|prompt_guard",
+    "action": "execute|push|read|send|analyze",
+    "target": "full target or command",
+    "risk_category": "string"
+}
 
 Examples:
+echo hello
+{
+    "tool":"shell",
+    "action":"execute",
+    "target":"echo hello",
+    "risk_category":"shell_command_execution"
+}
+
+rm -rf /
+{
+    "tool":"shell",
+    "action":"execute",
+    "target":"rm -rf /",
+    "risk_category":"shell_command_execution"
+}
 
 User: Push code to github
 
@@ -47,6 +88,17 @@ def analyze(state: dict):
     query = state["query"]
     print("RAW QUERY:", query)
     print("LOWER QUERY:", query.lower())
+
+    if any(query.lower().startswith(cmd) for cmd in SHELL_PREFIXES):
+        return {
+            "analysis":{
+                "tool": "shell",
+                "action": "execute",
+                "target": query,
+                "risk_category": "shell_command_execution"
+            }
+        }
+
     if ".env" in query: 
         return {
             "analysis":{
