@@ -5,6 +5,8 @@ with open("config/policies.yaml") as f:
 
 
 def evaluatePolicy(risk, analysis):
+    print("POLICY INPUT:", risk)
+    print("POLICY ANALYSIS:", analysis)
 
     score = float(risk["risk_score"])
 

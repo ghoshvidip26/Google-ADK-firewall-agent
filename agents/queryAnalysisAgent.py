@@ -44,7 +44,9 @@ Return JSON only.
 """
 
 def analyze(state: dict): 
-    query = state["query"].lower()
+    query = state["query"]
+    print("RAW QUERY:", query)
+    print("LOWER QUERY:", query.lower())
     if ".env" in query: 
         return {
             "analysis":{

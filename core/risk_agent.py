@@ -36,6 +36,7 @@ Prompt injection:
 """
 
 def assess_risk(analysis):
+    print("RISK INPUT: ",analysis)
     response = riskLLM.invoke(
         [
             {
