@@ -19,25 +19,9 @@ def main():
     )
 
     decision = evaluatePolicy(
-        risk,analysis["analysis"]
+        risk,
+        analysis["analysis"]
     )
-    if decision=="ALLOW" and analysis["analysis"]["tool"]=="github":
-        # pushCode(
-        #     repo=analysis["analysis"]["repo"],
-        #     branch=analysis["analysis"]["branch"]
-        # )
-        result = pushCode()
-        print("\n=== GITHUB TOOL ===")
-        print(result)
-    if decision=="PENDING":
-        approval = input("\n[AEGIS] Approve action? (y/n): ").strip().lower()
-        if approval=="y":
-            decision="ALLOW"
-        else:
-            decision="BLOCK"
-
-        print(f"[AEGIS] Decision: {decision}\n")
-
     showDashboard(
         query=query,
         # tool=analysis["analysis"]["tool"],
@@ -47,6 +31,28 @@ def main():
         decision=decision,
         reason=risk["reason"]
     )
+    
+    if decision=="PENDING":
+        approval = input("\n[AEGIS] Approve action? (y/n): ").strip().lower()
+        if approval=="y":
+            decision="ALLOW"
+        else:
+            decision="BLOCK"
+    
+    if decision=="ALLOW" and analysis["analysis"]["tool"]=="github":
+        # pushCode(
+        #     repo=analysis["analysis"]["repo"],
+        #     branch=analysis["analysis"]["branch"]
+        # )
+        result = pushCode()
+        if result["decision"] == "BLOCK":
+            print("\n[AEGIS] Push blocked")
+            print(result["reason"]) 
+            return
+        print("\n=== GITHUB TOOL ===")
+        print(result)
+
+    print(f"[AEGIS] Decision: {decision}\n")
 
     logEvent({
         "query": query,

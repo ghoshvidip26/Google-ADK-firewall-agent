@@ -1,5 +1,24 @@
 import subprocess
 import os
+import math
+from collections import Counter
+import re
+
+def calculateEntropy(text):
+    if not text:
+        return 0
+    counts = Counter(text)
+    probs = [count / len(text) for count in counts.values()]
+    return -sum(
+        p * math.log2(p)
+        for p in probs
+    )
+
+def looks_like_secret(value):
+    if len(value) < 20:
+        return False
+    entropy = calculateEntropy(value)
+    return entropy > 3.5
 
 DANGEROUS_FILES = [
     ".env",
@@ -13,16 +32,6 @@ DANGEROUS_FILES = [
     "venv",
     "build",
     "dist"
-]
-SECRET_PATTERNS = [
-    "api_key=",
-    "apikey=",
-    "secret=",
-    "token=",
-    "private_key=",
-    "aws_access_key_id",
-    "aws_secret_access_key",
-    "bearer "
 ]
 
 def getCurrentBranch():
@@ -48,22 +57,49 @@ def getChangedFiles():
         files.append(line.split(" ")[-1])
     return files
 
-def scanSecrets(files):
+def getGitDiff():
+    result = subprocess.run(
+        ["git", "diff"],
+        capture_output=True,
+        text=True
+    )
+    return result.stdout
+
+def scanSecrets():
     findings = []
-    for file in files:
-        try:
-            with open(file, "r", encoding="utf-8") as f:
-                content = f.read()
-                for pattern in SECRET_PATTERNS:
-                    if pattern.lower() in content:
-                        findings.append({
-                            "file": file,
-                            "pattern": pattern,
-                            "risk_score": 1.0
-                        })
-        except:
-            pass
-    return findings
+    diff = getGitDiff()
+    for line in diff.splitlines():
+        if not line.startswith("+"):
+            continue
+
+        if line.startswith("+++"):
+            continue
+
+        if "process.env" in line:
+            continue
+
+        if "os.getenv" in line:
+            continue
+
+        if "os.environ" in line:
+            continue
+
+        match = re.search(
+            r'=\s*["\']([^"\']+)["\']',
+            line
+        )
+
+        if not match:
+            continue
+
+        value = match.group(1)
+
+        if (len(value) > 20 and looks_like_secret(value)):
+            findings.append({
+                "line": line.strip()
+            })
+
+    return findings        
 
 def scanFiles(files):
     detected = []
@@ -99,7 +135,7 @@ def pushCode():
     print(files)
     print("\n[AEGIS] Looking for secrets...")
     
-    secret_findings = scanSecrets(files)
+    secret_findings = scanSecrets()
     if dangerous_files:
         return {
             "decision": "BLOCK",
@@ -115,13 +151,6 @@ def pushCode():
     subprocess.run(["git", "add", "."])
     commitMessage = f"Aegis commit to {branch}"
     subprocess.run(["git", "commit", "-m", commitMessage],check=True,text=True)
-
-    if commitMessage.returncode!=0:
-        return {
-            "decision": "BLOCK",
-            "risk_score": 0.95,
-            "reason": "Commit failed"
-        }
 
     subprocess.run(["git", "push","origin",branch])
     print("Successfully pushed code")

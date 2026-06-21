@@ -44,6 +44,16 @@ Return JSON only.
 """
 
 def analyze(state: dict): 
+    query = state["query"].lower()
+    if ".env" in query: 
+        return {
+            "analysis":{
+                "tool": "file",
+                "action": "read",
+                "target": ".env",
+                "risk_category":"credential_access"
+            }
+        }
     result = queryAnalysisAgent.invoke(
         [{
             "role": "system",
@@ -69,6 +79,7 @@ def analyze(state: dict):
                 "target":"unknown",
                 "risk_category":"unknown"
             }
+        print("PARSED ANALYSIS: ",analysis)
         return {"analysis": analysis}
     except Exception as e:
         print(f"Error parsing JSON from query analysis agent: {e}")

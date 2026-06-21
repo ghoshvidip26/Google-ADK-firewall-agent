@@ -12,8 +12,26 @@ Return ONLY JSON:
 
 {
   "risk_score": 0.0,
-  "severity": "low|medium|high|critical",
   "reason": ""
+}
+
+Examples:
+Github push:
+{
+  "risk_score": 0.2,
+  "reason": "Code deployment action"
+}
+
+Read .env:
+{
+  "risk_score": 0.95,
+  "reason": "Sensitive credentials exposure"
+}
+
+Prompt injection:
+{
+  "risk_score": 0.99,
+  "reason": "Attempt to override system instructions"
 }
 """
 
