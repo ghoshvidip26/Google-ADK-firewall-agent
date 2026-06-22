@@ -1,5 +1,6 @@
 from helper import extract_json
 from langchain_ollama import ChatOllama
+from core.prompt_guard import PROMPT_INJECTION_PATTERNS
 
 SHELL_PREFIXES = [
     "ls",
@@ -85,11 +86,22 @@ Return JSON only.
 """
 
 def analyze(state: dict): 
-    query = state["query"]
+    query = state["query"].strip()
+    query_lower = query.lower()
     print("RAW QUERY:", query)
     print("LOWER QUERY:", query.lower())
 
-    if any(query.lower().startswith(cmd) for cmd in SHELL_PREFIXES):
+    if any(pattern in query_lower for pattern in PROMPT_INJECTION_PATTERNS):
+        return {
+            "analysis":{
+                "tool": "prompt_guard",
+                "action": "analyze",
+                "target": query,
+                "risk_category": "prompt_injection"
+            }
+        }
+
+    if any(query_lower.startswith(cmd) for cmd in SHELL_PREFIXES):
         return {
             "analysis":{
                 "tool": "shell",
@@ -99,7 +111,7 @@ def analyze(state: dict):
             }
         }
 
-    if ".env" in query: 
+    if ".env" in query_lower: 
         return {
             "analysis":{
                 "tool": "file",

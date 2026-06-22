@@ -17,6 +17,12 @@ def main():
     print("ANALYSIS OBJECT:", analysis)
 
     tool = analysis["analysis"]["tool"]
+    risk = {
+        "risk_score": 1.0,
+    "severity": "critical",
+    "decision": "BLOCK",
+    "reason": "Unknown tool detected"
+    }
     if tool=="shell": 
         risk = assess_shell_command(
             query
