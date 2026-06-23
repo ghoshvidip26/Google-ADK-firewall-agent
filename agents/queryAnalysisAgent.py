@@ -91,6 +91,17 @@ def analyze(state: dict):
     print("RAW QUERY:", query)
     print("LOWER QUERY:", query.lower())
 
+    if query_lower.startswith("cat "):
+        filepath = query.split(" ", 1)[1]
+        return {
+            "analysis": {
+                "tool": "file",
+                "action": "read",
+                "target": filepath,
+                "risk_category": "file_access"
+            }
+        }
+
     if any(pattern in query_lower for pattern in PROMPT_INJECTION_PATTERNS):
         return {
             "analysis":{

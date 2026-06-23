@@ -6,6 +6,7 @@ from core.risk_agent import assess_risk
 from tools.tools import pushCode
 from core.shell_risk import assess_shell_command
 from core.prompt_guard import detectPromptInjection
+from core.file_engine import assessFileRisk
 
 def main():
 
@@ -37,6 +38,11 @@ def main():
             analysis["analysis"]["target"]
         )
 
+    elif tool=="file":
+        risk = assessFileRisk(
+            analysis["analysis"]["target"]
+        )
+
     decision = evaluatePolicy(
         risk,
         analysis["analysis"]
@@ -48,7 +54,7 @@ def main():
         risk_score=risk["risk_score"],
         severity=risk["severity"],
         decision=decision,
-        reason=risk["reason"]
+        reason=risk.get("reason", "No reason provided")
     )
     
     if decision=="PENDING":

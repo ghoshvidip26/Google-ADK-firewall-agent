@@ -20,7 +20,7 @@ LOW_RISK_COMMANDS = [
     "git diff",
     "git show",
     "git reflog",
-    "cat README.md",
+    "cat",
     "head",
     "tail",
     "less",
