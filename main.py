@@ -7,14 +7,24 @@ from tools.tools import pushCode
 from core.shell_risk import assess_shell_command
 from core.prompt_guard import detectPromptInjection
 from core.file_engine import assessFileRisk
+from tools.cache import setDataToCache,getDataFromCache,deleteFromCache,createCacheKey
 
 def main():
 
     query = input("Enter query: ")
+    cacheKey = createCacheKey(query)
+    cached = getDataFromCache(cacheKey)
 
-    analysis = analyze({
-        "query": query
-    })
+    if cached:
+        print("Cache Hit")
+        analysis = cached
+    else:
+        print("Cache Miss")
+        analysis = analyze({
+            "query": query
+        })
+        setDataToCache(cacheKey, analysis)
+
     print("ANALYSIS OBJECT:", analysis)
 
     tool = analysis["analysis"]["tool"]
