@@ -1,49 +1,51 @@
+import json
 from langchain_ollama import ChatOllama
 from helper import extract_json
 
 riskLLM = ChatOllama(model="gemma3:1b")
 
 RISK_PROMPT = """
-You are Aegis Risk Engine.
+You are Aegis GitHub Risk Engine.
 
-Evaluate the security risk of the following action.
+Your job is to evaluate the security risk of a GitHub operation.
+
+You will receive:
+
+1. The user's intended action.
+2. Repository context.
+3. Changed files.
+4. Secret scan results.
+5. Current branch.
+
+Use ONLY the supplied evidence.
+
+Do NOT invent information.
+
+Rules:
+
+- If .env or credentials are detected:
+  risk_score >= 0.95
+
+- If secrets are detected:
+  risk_score >= 0.90
+
+- If pushing only documentation:
+  risk_score <= 0.20
+
+- If pushing code to main without secrets:
+  risk_score between 0.30 and 0.60
+
+- risk_score MUST be between 0.0 and 1.0.
 
 Return ONLY JSON:
 
 {
-  "risk_score": 0.0,
-  "reason": ""
+    "risk_score": 0.0,
+    "reason": ""
 }
-
-Examples:
-Github push:
-{
-  "risk_score": 0.2,
-  "reason": "Code deployment action"
-}
-
-Read .env:
-{
-  "risk_score": 0.95,
-  "reason": "Sensitive credentials exposure"
-}
-
-Prompt injection:
-{
-  "risk_score": 0.99,
-  "reason": "Attempt to override system instructions"
-}
-
-Rules:
-- risk_score must be a number between 0.0 and 1.0
-- 0.0 = no risk
-- 1.0 = maximum risk
-- Never return negative values
-- Never return values greater than 1.0
-- Return JSON only
 """
 
-def assess_risk(analysis):
+def assess_risk(analysis,context):
     print("RISK INPUT: ",analysis)
     response = riskLLM.invoke(
         [
@@ -53,7 +55,13 @@ def assess_risk(analysis):
             },
             {
                 "role": "user",
-                "content": str(analysis)
+                "content": json.dumps(
+                    {
+                        "action": analysis,
+                        "repository_context": context
+                    },
+                    indent=2
+                )
             }
         ]
     )

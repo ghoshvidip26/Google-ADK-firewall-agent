@@ -28,6 +28,7 @@ def connectRedis():
 client = connectRedis()
 
 def setDataToCache(cache_key,analysis):
+    print(f"SET {cache_key}")
     client.setex(
         cache_key,
         CACHE_TTL,
@@ -36,11 +37,14 @@ def setDataToCache(cache_key,analysis):
 
 def getDataFromCache(cache_key):
     data = client.get(cache_key)
-    if data is None:
-        return None
-    return json.loads(data)
+    if data:
+        print(f"HIT {cache_key}")
+        return json.loads(data)
+    print(f"MISS {cache_key}")
+    return None
 
 def deleteFromCache(cache_key):
+    print(f"DEL {cache_key}")
     client.delete(cache_key)
 
 def createCacheKey(query: str):

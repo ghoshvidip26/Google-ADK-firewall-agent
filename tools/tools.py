@@ -121,6 +121,16 @@ def readFile(path):
         "path": path
     }
 
+def buildGithubContext():
+    return {
+        "repo": getRemoteRepo(),
+        "branch": getCurrentBranch(),
+        "changed_files": getChangedFiles(),
+        "git_diff": getGitDiff(),
+        "dangerous_files": scanFiles(getChangedFiles()),
+        "secret_findings": scanSecrets()
+    }
+
 def pushCode(): 
     files = getChangedFiles()
     dangerous_files = scanFiles(files)

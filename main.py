@@ -1,3 +1,4 @@
+from tools.tools import buildGithubContext
 from dashboard import showDashboard
 from agents.queryAnalysisAgent import analyze
 from core.policy_engine import evaluatePolicy
@@ -7,7 +8,7 @@ from tools.tools import pushCode
 from core.shell_risk import assess_shell_command
 from core.prompt_guard import detectPromptInjection
 from core.file_engine import assessFileRisk
-from tools.cache import setDataToCache,getDataFromCache,deleteFromCache,createCacheKey
+from tools.cache import setDataToCache,getDataFromCache,createCacheKey
 
 def main():
 
@@ -17,46 +18,52 @@ def main():
 
     if cached:
         print("Cache Hit")
-        analysis = cached
+        analysis = cached["analysis"]
+        risk = cached["risk"]
+        decision = cached["decision"]
     else:
         print("Cache Miss")
         analysis = analyze({
             "query": query
         })
-        setDataToCache(cacheKey, analysis)
+        tool = analysis["analysis"]["tool"]
+        if tool=="shell": 
+            risk = assess_shell_command(
+                query
+            )
+        elif tool=="github":
+            context = buildGithubContext()
+            risk = assess_risk(
+                analysis["analysis"],context
+            )
 
-    print("ANALYSIS OBJECT:", analysis)
+        elif tool=="prompt_guard":
+            risk = detectPromptInjection(
+                analysis["analysis"]["target"]
+            )
 
-    tool = analysis["analysis"]["tool"]
-    risk = {
-        "risk_score": 1.0,
-    "severity": "critical",
-    "decision": "BLOCK",
-    "reason": "Unknown tool detected"
-    }
-    if tool=="shell": 
-        risk = assess_shell_command(
-            query
-        )
-    elif tool=="github":
-        risk = assess_risk(
+        elif tool=="file":
+            risk = assessFileRisk(
+                analysis["analysis"]["target"]
+            )
+        else:
+            risk = {
+                "risk_score": 1.0,
+                "severity": "critical",
+                "decision": "BLOCK",
+                "reason": "Unknown tool detected"
+            }
+        decision = evaluatePolicy(
+            risk,
             analysis["analysis"]
         )
-
-    elif tool=="prompt_guard":
-        risk = detectPromptInjection(
-            analysis["analysis"]["target"]
-        )
-
-    elif tool=="file":
-        risk = assessFileRisk(
-            analysis["analysis"]["target"]
-        )
-
-    decision = evaluatePolicy(
-        risk,
-        analysis["analysis"]
-    )
+        setDataToCache(cacheKey,{
+            "analysis": analysis,
+            "risk": risk,
+            "decision": decision
+        })
+    print("ANALYSIS OBJECT:", analysis)    
+    
     showDashboard(
         query=query,
         # tool=analysis["analysis"]["tool"],
