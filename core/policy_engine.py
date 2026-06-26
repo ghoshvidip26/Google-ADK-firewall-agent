@@ -9,32 +9,36 @@ def evaluatePolicy(risk, analysis):
     print("POLICY ANALYSIS:", analysis)
 
     score = float(risk["risk_score"])
-
     severity = risk.get("severity", "low")
+    category = analysis.get("risk_category", "")
 
-    category = analysis.get(
-        "risk_category",
-        ""
-    )
-
-    # 1. Blocked categories
+    # 1. Explicitly blocked categories
     if category in POLICY["blocked_categories"]:
         return "BLOCK"
 
-    # 2. Blocked severities
+    # 2. Critical severity always blocks
     if severity in POLICY["blocked_severities"]:
         return "BLOCK"
 
-    # 3. Risk threshold
+    # 3. High risk score always blocks
     if score >= POLICY["max_risk_score"]:
         return "BLOCK"
 
-    # 4. Approval-required categories
+    # 4. Categories requiring Human-in-the-Loop
     if category in POLICY["approval_required"]:
         return "PENDING"
 
-    # 5. Risk-based approval
+    # 5. Medium severity requires Human-in-the-Loop
+    if severity == "medium":
+        return "PENDING"
+
+    # 6. Configurable approval severities
+    if severity in POLICY.get("approval_severities", []):
+        return "PENDING"
+
+    # 7. Score-based Human-in-the-Loop
     if score >= POLICY["approval_threshold"]:
         return "PENDING"
 
+    # 8. Everything else is safe
     return "ALLOW"

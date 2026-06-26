@@ -5,6 +5,9 @@ blocked_severities:
  - critical
  - high
 
+approval_severities:
+ - medium
+
 sensitive_keywords:
   - password
   - api_key
